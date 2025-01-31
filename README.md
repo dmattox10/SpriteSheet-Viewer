@@ -2,10 +2,10 @@
 
 A web-based tool for viewing and converting sprite sheet atlas files. Supports both TexturePacker's JSON Hash format and Final Parsec's sprite sheet format, with export capabilities to Phaser-compatible JSON.
 
-![Sprite Sheet Viewer Dark Mode](screenshot1.png)
+![Sprite Sheet Viewer in Action](screenshot1.png)
 *Dark mode view showing frame highlighting and dimensions*
 
-![Sprite Sheet Viewer Light Mode](screenshot2.png)
+![Sprite Sheet Viewer with Complex Scenes](screenshot2.png)
 *Light mode view with Final Parsec JSON loaded*
 
 ## Features
