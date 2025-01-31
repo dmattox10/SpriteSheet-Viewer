@@ -1,0 +1,50 @@
+.frame-container {
+  cursor: pointer;
+  position: absolute;
+}
+
+.frame-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid var(--selected-column-background);
+  opacity: 0.3;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.frame-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--selected-second-column-background);
+  color: var(--text-dark);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  /* margin-bottom: 4px; */
+  z-index: 10;
+}
+
+.frame-container:hover .frame-overlay {
+  opacity: 0.6;
+  border-color: var(--selected-cell-background);
+}
+
+.frame-container:hover .frame-label {
+  opacity: 1;
+}
+
+.theme-toggle {
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+}

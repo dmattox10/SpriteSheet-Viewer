@@ -1,0 +1,402 @@
+// Variables
+$font-family: 'Oswald', system-ui;
+
+$background-dark: #2E3440; // Nord Background Color
+$text-light: #D8DEE9; // Nord Light Text
+$background-light: #f4f4f9;
+$text-dark: #333;
+
+$container-background-dark: #3B4252; // Darker background
+$container-background-light: #ffffff; // Light background
+
+$input-background-dark: #4C566A;
+$input-background-light: #fff;
+$input-border-dark: #ECEFF4;
+$input-border-light: #ccc;
+$input-color-dark: #ECEFF4;
+$input-color-light: #333;
+
+$button-background-dark: #81A1C1;
+$button-color-dark: #ECEFF4;
+$button-background-light: #333;
+$button-color-light: #fff;
+
+$table-background-dark: #4C566A;
+$table-background-light: #fff;
+
+$table-border-color-dark: #ECEFF4;
+$table-border-color-light: #ccc;
+
+$table-header-background-dark: #81A1C1;
+$table-header-color-dark: #ECEFF4;
+$table-header-background-light: #333;
+$table-header-color-light: #fff;
+
+$table-row-even-background-dark: #2E3440;
+$table-row-odd-background-dark: #4C566A;
+
+$table-row-even-background-light: #f4f4f9;
+$table-row-odd-background-light: #fff;
+
+$selected-column-background: #88C0D0;
+$selected-second-column-background: #EBCB8B;
+$selected-cell-background: #A3BE8C;
+
+:root {
+  --selected-column-background: #{$selected-column-background};
+  --selected-second-column-background: #{$selected-second-column-background};
+  --selected-cell-background: #{$selected-cell-background};
+  --text-dark: #{$text-dark};
+}
+
+// Base styles
+body {
+  font-family: $font-family;
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+
+  &.dark-mode {
+    background-color: $background-dark;
+    color: $text-light;
+
+    .container {
+      background-color: $container-background-dark;
+    }
+
+    .csv-input textarea,
+    .csv-input input {
+      background-color: $input-background-dark;
+      color: $input-color-dark;
+      border: 1px solid $input-border-dark;
+    }
+
+    th,
+    td {
+      border-color: $table-border-color-dark;
+    }
+
+    .table-component {
+      background-color: $table-background-dark;
+      border: 1px solid $table-border-color-dark;
+      
+
+      th {
+        background-color: $table-header-background-dark;
+        color: $table-header-color-dark;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: $table-row-even-background-dark;
+      }
+
+      tbody tr:nth-child(odd) {
+        background-color: $table-row-odd-background-dark;
+      }
+    }
+
+    button {
+      background-color: $button-background-dark;
+      color: $button-color-dark;
+    }
+  }
+
+  &.light-mode {
+    background-color: $background-light;
+    color: $text-dark;
+
+    .container {
+      background-color: $container-background-light;
+    }
+
+    .csv-input textarea,
+    .csv-input input {
+      background-color: $input-background-light;
+      color: $input-color-light;
+      border: 1px solid $input-border-light;
+    }
+
+    th,
+    td {
+      border-color: $table-border-color-light;
+    }
+
+    .table-component {
+      background-color: $table-background-light;
+      border: 1px solid $table-border-color-light;
+
+      th {
+        background-color: $table-header-background-light;
+        color: $table-header-color-light;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: $table-row-even-background-light;
+      }
+
+      tbody tr:nth-child(odd) {
+        background-color: $table-row-odd-background-light;
+      }
+    }
+
+    button {
+      background-color: $button-background-light;
+      color: $button-color-light;
+    }
+  }
+}
+
+/* Container */
+.container {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 20px;
+}
+
+/* Navbar styles */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+
+    li {
+      margin-right: 20px;
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+    }
+  }
+
+  button {
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+/* Input containers */
+.csv-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  .csv-input {
+    flex: 1 1 45%;
+    margin-bottom: 10px;
+    padding: 10px;
+    textarea,
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      border: 1px solid;
+    }
+  }
+}
+
+/* Buttons */
+.button-container {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  padding: 1rem;
+  button {
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+  div {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+
+    svg {
+      margin-right: .5rem;
+    }
+  }
+}
+
+.mt-2 {
+  text-align: center;
+}
+
+.export-button {
+  padding: 10px 20px;
+  margin-top: 20px;
+  border: none;
+  cursor: pointer;
+  background-color: $button-background-dark;
+  color: $button-color-dark;
+  border-radius: 4px;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  body.light-mode & {
+    background-color: $button-background-light;
+    color: $button-color-light;
+  }
+}
+
+/* Tables container */
+.all-tables-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Visualization container using Flexbox */
+.visualization-container {
+  display: flex;
+  // flex-wrap: wrap;
+  // justify-content: space-around;
+  justify-content: center;
+  width: 100%;
+  // padding: 20px;
+  img {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Table components */
+.table-component {
+  position: relative;
+  flex: 1 1 calc(50% - 40px);
+  min-width: 300px;
+  max-width: none;
+  // padding: 10px;
+  // border: 1px solid;
+  box-sizing: border-box;
+  overflow: visible;
+
+  .relative {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  overflow: hidden;
+
+  th,
+  td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+}
+
+/* Highlighted column styles */
+.selected-column {
+  background-color: $selected-column-background !important;
+}
+
+.selected-second-column {
+  background-color: $selected-second-column-background !important;
+}
+
+/* Highlighted cell styles */
+.selected-cell {
+  background-color: $selected-cell-background !important;
+}
+
+.instructions-content {
+  margin-top: 20px;
+}
+
+.tab-container {
+  display: flex;
+  margin-bottom: 20px;
+
+  button {
+    flex: 1;
+    padding: 10px;
+    margin-right: 5px;
+    border: none;
+    cursor: pointer;
+    background-color: $button-background-dark;
+    color: $button-color-dark;
+
+    &:last-child {
+      margin-right: 0;
+    }
+
+    &:hover {
+      opacity: 0.9;
+    }
+
+    &.active {
+      background-color: darken($button-background-dark, 10%);
+    }
+  }
+
+  body.light-mode & {
+    button {
+      background-color: $button-background-light;
+      color: $button-color-light;
+
+      &.active {
+        background-color: lighten($button-background-light, 10%);
+      }
+    }
+  }
+}// At the end of your style.css or style.scss file
+
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  background-color: $container-background-dark;
+  color: $text-light;
+  margin-top: 2rem;
+
+  p {
+    margin: 1rem 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  // Adjust styles for light mode
+  body.light-mode & {
+    background-color: $container-background-light;
+    color: $text-dark;
+
+    a {
+      color: inherit;
+    }
+  }
+}
