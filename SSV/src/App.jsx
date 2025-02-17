@@ -58,44 +58,69 @@ const App = () => {
     return () => document.head.removeChild(style);
   }, [isDarkMode]);
 
-  // Add format detection to handleJsonUpload
-  const handleJsonUpload = async (event) => {
-    if (isComplete) {
-      setSpriteImage(null);
-      setHoveredFrame(null);
-    }
-    const file = event.target.files[0];
-    if (!file) return;
+const handleJsonUpload = async (event) => {
+  if (isComplete) {
+    setSpriteImage(null);
+    setHoveredFrame(null);
+  }
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.name.endsWith('.json')) {
+    setError('Please upload a JSON file');
+    return;
+  }
+  setOriginalFilename(file.name.replace('.json', ''));
+
+  try {
+    const text = await file.text();
+    let parsedData = JSON.parse(text);
     
-    if (!file.name.endsWith('.json')) {
-      setError('Please upload a JSON file');
+    // Detect format
+    if (parsedData.textures) {
+      // TexturePacker array format
+      const textureData = parsedData.textures[0];
+      const convertedData = {
+        frames: {},
+        meta: {
+          format: textureData.format,
+          size: textureData.size,
+          scale: textureData.scale.toString()
+        }
+      };
+      
+      // Convert array of frames to object format
+      textureData.frames.forEach(frame => {
+        convertedData.frames[frame.filename] = {
+          frame: {
+            x: frame.frame.x,
+            y: frame.frame.y,
+            w: frame.frame.w,
+            h: frame.frame.h
+          }
+        };
+      });
+      
+      setJsonFormat('texturepacker');
+      setJsonData(convertedData);
+    } else if (parsedData.frames && parsedData.meta) {
+      setJsonFormat('phaser');
+      setJsonData(parsedData);
+    } else if (parsedData.sprites && parsedData.spriteSheetWidth) {
+      setJsonFormat('finalparsec');
+      const convertedData = convertFinalParsecToPhaser(parsedData);
+      setJsonData(convertedData);
+    } else {
+      setError('Unrecognized JSON format');
       return;
     }
-    setOriginalFilename(file.name.replace('.json', ''));
-
-    try {
-      const text = await file.text();
-      let parsedData = JSON.parse(text); // Change const to let
-      
-      // Detect format
-      if (parsedData.frames && parsedData.meta) {
-        setJsonFormat('phaser');
-        setJsonData(parsedData);
-      } else if (parsedData.sprites && parsedData.spriteSheetWidth) {
-        setJsonFormat('finalparsec');
-        // Convert to Phaser format
-        const convertedData = convertFinalParsecToPhaser(parsedData); // Create new variable
-        setJsonData(convertedData);
-      } else {
-        setError('Unrecognized JSON format');
-        return;
-      }
-      
-      setError(null);
-    } catch (err) {
-      setError('Error reading JSON file');
-    }
-  };
+    
+    setError(null);
+  } catch (err) {
+    setError('Error reading JSON file');
+    console.error(err);
+  }
+};
 
 const convertFinalParsecToPhaser = (fpData) => {
   const frames = {};
