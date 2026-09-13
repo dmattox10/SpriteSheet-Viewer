@@ -312,9 +312,9 @@ useEffect(() => {
       {jsonData && spriteImage && (
         <div className="visualization-container">
           <div className="table-component">
-            <div 
+            <div
               className="relative"
-              style={{ 
+              style={{
                 width: jsonData.meta.size.w,
                 height: jsonData.meta.size.h
               }}
@@ -342,6 +342,12 @@ useEffect(() => {
                }}
                onMouseEnter={() => setHoveredFrame(filename)}
                onMouseLeave={() => setHoveredFrame(null)}
+               // A tap doesn't fire :hover reliably, so the label needs a
+               // handler of its own. This always turns it on (rather than
+               // toggling) so it can't cancel itself out if a touch browser
+               // also fires a synthetic mouseenter right before the click;
+               // tapping a different frame is how you move the label along.
+               onClick={() => setHoveredFrame(filename)}
                title={`${filename} (${data.frame.w}x${data.frame.h})`} // Add this line
              >
                <div className="frame-label">
@@ -353,6 +359,13 @@ useEffect(() => {
             </div>
           </div>
         </div>
+      )}
+
+      {jsonData && spriteImage && (
+        <p className="sheet-hint">
+          Shown at native resolution ({jsonData.meta.size.w}&times;{jsonData.meta.size.h}px) —
+          scroll sideways within the sheet if it's wider than your screen, tap a frame for its name.
+        </p>
       )}
 
       {(!jsonData || !spriteImage) && (

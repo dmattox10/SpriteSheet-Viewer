@@ -32,12 +32,14 @@
   z-index: 10;
 }
 
-.frame-container:hover .frame-overlay {
+.frame-container:hover .frame-overlay,
+.frame-container.frame-hovered .frame-overlay {
   opacity: 0.6;
   border-color: var(--selected-cell-background);
 }
 
-.frame-container:hover .frame-label {
+.frame-container:hover .frame-label,
+.frame-container.frame-hovered .frame-label {
   opacity: 1;
 }
 
