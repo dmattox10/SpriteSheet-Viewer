@@ -279,19 +279,44 @@ body {
 /* Table components */
 .table-component {
   position: relative;
-  flex: 1 1 calc(50% - 40px);
-  min-width: 300px;
-  max-width: none;
-  // padding: 10px;
-  // border: 1px solid;
+  /* The sheet inside is a fixed-pixel canvas — its whole point is showing
+     frames at native resolution, so it isn't a candidate for shrinking to
+     fit. Left at overflow: visible it just ran the atlas (and the page
+     along with it) off the right edge of the screen on anything narrower
+     than the sheet. Scrolling it in its own frame keeps the rest of the
+     page — and the page's own width — intact; the caption underneath
+     (.sheet-hint) is what tells you that's what's happening, since a plain
+     scrollbar on a canvas this size is easy to miss. Setting a non-visible
+     overflow here also zeroes this flex item's automatic minimum size, so
+     it can actually shrink below the sheet's width instead of forcing it.
+  */
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
-  overflow: visible;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Setting overflow-x makes the browser clip overflow-y too, and
+     .frame-label sits above its frame (bottom: 100%) — without this room a
+     frame in the top row would have its label sliced off rather than
+     spilling above the canvas the way it did when overflow was visible.
+     The side padding buys the same room for a label centred over a frame
+     right at the left or right edge of the sheet, which would otherwise
+     have its overhang cut off by the same new clipping; it isn't airtight
+     for a very long filename, but it covers the ordinary case. */
+  padding: 28px 48px 0;
 
   .relative {
     position: relative;
-    width: 100%;
-    height: 100%;
   }
+}
+
+.sheet-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.7;
 }
 
 /* Table styles */
