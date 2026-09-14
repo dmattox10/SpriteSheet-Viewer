@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { track, trackFormError } from './analytics.js';
 import { Upload, Moon, Sun } from 'lucide-react';
 import './App.scss';
 
@@ -67,6 +68,7 @@ const handleJsonUpload = async (event) => {
   if (!file) return;
   
   if (!file.name.endsWith('.json')) {
+    trackFormError('json_upload', 'extension', 'not json');
     setError('Please upload a JSON file');
     return;
   }
@@ -102,21 +104,31 @@ const handleJsonUpload = async (event) => {
       });
       
       setJsonFormat('texturepacker');
+      // Which sprite format people actually bring is the single most useful
+      // thing this tool could report, and it knew it and said nothing. Frame
+      // count goes with it as a size signal. No filenames: those are the
+      // user's own project names and none of GA's business.
+      track('sheet_loaded', { format: 'texturepacker', frames: Object.keys(convertedData.frames).length });
       setJsonData(convertedData);
     } else if (parsedData.frames && parsedData.meta) {
       setJsonFormat('phaser');
+      track('sheet_loaded', { format: 'phaser', frames: Object.keys(parsedData.frames).length });
       setJsonData(parsedData);
     } else if (parsedData.sprites && parsedData.spriteSheetWidth) {
       setJsonFormat('finalparsec');
       const convertedData = convertFinalParsecToPhaser(parsedData);
+      track('sheet_loaded', { format: 'finalparsec', frames: Object.keys(convertedData.frames).length });
       setJsonData(convertedData);
     } else {
+      // A format nobody supports is a feature request arriving as a bounce.
+      trackFormError('json_upload', 'format', 'unrecognized');
       setError('Unrecognized JSON format');
       return;
     }
     
     setError(null);
   } catch (err) {
+    trackFormError('json_upload', 'parse', 'unreadable');
     setError('Error reading JSON file');
     console.error(err);
   }
@@ -151,6 +163,7 @@ const convertFinalParsecToPhaser = (fpData) => {
 };
 
 const handleThemeToggle = () => {
+  track('theme_toggle', { to: isDarkMode ? 'light' : 'dark' });
   setIsDarkMode(prev => !prev);
 };
 
@@ -165,9 +178,14 @@ const handleThemeToggle = () => {
     if (!file) return;
     
     if (!file.type.startsWith('image/')) {
+      trackFormError('image_upload', 'type', 'not an image');
       setError('Please upload an image file');
       return;
     }
+
+    // The type only -- never the filename, which is the user's own project
+    // name and nothing GA needs.
+    track('image_loaded', { type: file.type });
 
     try {
       const url = URL.createObjectURL(file);
@@ -205,6 +223,9 @@ useEffect(() => {
 
  const handleExport = () => {
   if (!jsonData) return;
+  // The finish line. A visit that loads a sheet and never exports is the
+  // tool failing at the last step, and it looked identical to a success.
+  track('export', { format: jsonFormat, frames: Object.keys(jsonData.frames).length });
   
   const phaserData = {
     frames: {},
