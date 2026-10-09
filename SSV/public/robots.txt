@@ -1,0 +1,8 @@
+# robots.txt for ssv.dantheman.fyi
+#
+# A small browser tool. Nothing is uploaded and nothing is stored, so there is
+# nothing here to keep a crawler away from.
+User-agent: *
+Allow: /
+
+Sitemap: https://ssv.dantheman.fyi/sitemap.xml
