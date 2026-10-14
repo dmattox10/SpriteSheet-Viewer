@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Moon, Sun } from 'lucide-react';
+import BannerAd from './BannerAd';
 import './App.scss';
 
 const Alert = ({ children }) => (
@@ -253,6 +254,11 @@ useEffect(() => {
         </button>
       </nav>
 
+      {/* Above the work area rather than beside it: the sheet below is drawn
+          at its own pixel size and often wider than this container, so it is
+          the one thing on the page that gets its space uncontested. */}
+      <BannerAd slot="top" mobileSlot="top-mobile" placement="top" />
+
       <div className="csv-input-container">
         <div className="csv-input">
           <input
@@ -373,12 +379,18 @@ useEffect(() => {
   </div>
 )}
 
+<div className="page-bottom">
 <footer className="footer">
   <p>Sprite Sheet Viewer makes it easy to inspect and convert sprite atlases. When working with sprite sheets, it can be difficult to identify which sprite is which within the atlas. This tool helps by visualizing frame data and runs entirely in your browser - your images are never uploaded anywhere.</p>
   <p>Supports both JSON Hash format (from <a href="https://www.codeandweb.com/texturepacker" target="_blank" rel="noopener noreferrer">TexturePacker</a> and similar tools) and sprite sheets created with <a href="https://www.finalparsec.com/tools/sprite_sheet_maker" target="_blank" rel="noopener noreferrer">Final Parsec's free tool</a>. The JSON Hash format is used by many game engines including <a href="https://phaser.io/" target="_blank" rel="noopener noreferrer">Phaser</a>.</p>
   <p>Created by <a href="https://dantheman.fyi" target="_blank" rel="noopener noreferrer">Daniel Mattox</a>. View source on <a href="https://github.com/dmattox10/SpriteSheet-Viewer" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
   <p>&copy; {new Date().getFullYear()} <a href="https://dantheman.fyi" target="_blank" rel="noopener noreferrer">Daniel Mattox</a>. All rights reserved.</p>
 </footer>
+  {/* Beside the footer copy on a wide window, under it on a narrow one.
+      Rendered whether or not a sheet is loaded — an advertiser bought days,
+      not the states of somebody else's upload form. */}
+  <BannerAd slot="side" placement="side" />
+</div>
 
     </div>
   );

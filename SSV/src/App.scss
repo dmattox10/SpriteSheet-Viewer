@@ -400,3 +400,81 @@ table {
     }
   }
 }
+/* Ad slots
+ *
+ * Two of them, both in the normal flow: a leaderboard above the upload row
+ * and a rectangle beside the footer copy. Neither one touches
+ * .visualization-container, which is the rule the whole placement follows —
+ * the sheet is rendered at its native pixel size, frequently wider than this
+ * container, and anything that competes with it for width makes the tool
+ * worse at the only thing it does.
+ *
+ * The creative is a fixed-size raster, so it is never stretched: max-width
+ * with height:auto lets it shrink proportionally on a window narrower than
+ * the shape, and nothing here can scale it past its own dimensions and blur
+ * it. The leaderboard swaps to the 320x50 slot before that becomes a real
+ * reduction — see LEADERBOARD_MIN_WIDTH in BannerAd.jsx.
+ */
+.banner-ad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  /* The box holds the slot's declared height from the first paint (set
+     inline, per slot) so the page does not jump when the creative arrives. */
+  box-sizing: content-box;
+}
+
+.banner-ad-label {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* Legible but plainly subordinate to the page: this is a disclosure, not a
+     heading. Inherits the theme's colour rather than naming one, so it stays
+     readable in both modes without a second declaration. */
+  opacity: 0.55;
+}
+
+.banner-ad-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  /* The viewer sets image-rendering: pixelated on the sprite sheet, which a
+     descendant selector would be welcome to inherit. A banner is ordinary
+     artwork and wants ordinary smoothing. */
+  image-rendering: auto;
+}
+
+.banner-ad-link {
+  display: block;
+  line-height: 0;
+}
+
+.banner-ad--top {
+  margin: 0 auto 20px;
+}
+
+/* Footer and rectangle share a row on a wide window and stack on a narrow
+ * one. The footer text keeps the remaining width rather than a fixed share,
+ * so the ad never squeezes a paragraph into a column of single words.
+ */
+.page-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
+  margin-top: 2rem;
+
+  .footer {
+    flex: 1 1 320px;
+    /* The row owns the spacing above it now; keeping the footer's own margin
+       would double it. */
+    margin-top: 0;
+  }
+
+  .banner-ad--side {
+    flex: 0 0 auto;
+    margin: 0 auto;
+  }
+}
