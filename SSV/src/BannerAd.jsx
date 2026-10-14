@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchBannerAd } from './adManifest'
+import { SLOT_SIZES, usePageSlots } from './adSlots'
 
 // An ad slot on the viewer page.
 //
@@ -11,46 +12,10 @@ import { fetchBannerAd } from './adManifest'
 // either side would be taking width from a 2048px atlas, and an ad that
 // makes the tool worse at its job is worth less than the space it occupies.
 //
-// The shapes come from the ad service's own inventory (SITES.ssv in
-// src/services/inventory.js there) and this table repeats them so the slot
-// can reserve the right space before the network answers. They have to agree:
-// a slot drawn at a size nobody can buy is a slot nobody can fill.
-const SLOT_SIZES = {
-    top: { width: 728, height: 90 },
-    'top-mobile': { width: 320, height: 50 },
-    side: { width: 300, height: 250 },
-}
-
-// The viewport width at which a 728x90 fits with the page's gutters intact
-// (20px of body padding and 20px of container padding, both sides) and a
-// little room to spare. Below it the leaderboard would have to scale down,
-// and an advertiser's wordmark at 44px tall is an impression nobody reads, so
-// the phone banner is fetched instead — a different slot, sold separately.
-const LEADERBOARD_MIN_WIDTH = 860
-
-function useIsNarrow(maxWidth) {
-    const [narrow, setNarrow] = useState(
-        () => typeof window !== 'undefined' && window.innerWidth < maxWidth
-    )
-
-    useEffect(() => {
-        const mq = window.matchMedia(`(max-width: ${maxWidth - 1}px)`)
-        const onChange = (e) => setNarrow(e.matches)
-        setNarrow(mq.matches)
-        mq.addEventListener('change', onChange)
-        return () => mq.removeEventListener('change', onChange)
-    }, [maxWidth])
-
-    return narrow
-}
-
-// One fetch per slot per mount, and nothing that re-fetches on a re-render —
-// uploading a file or toggling the theme must not cost another request, and
-// a banner that reshuffles while someone is reading it is an impression
-// nobody finished.
-//
-// The abort on unmount is not tidiness: the fetch resolving afterwards would
-// set state on a gone component.
+// One fetch per page per mount, and nothing that re-fetches on a re-render —
+// uploading a file or toggling the theme must not cost another request, and a
+// banner that reshuffles while someone is reading it is an impression nobody
+// finished.
 //
 // `undefined` is the pending state and `null` is the settled empty one, and
 // they are distinguished so the slot can hold its height while the request is
@@ -58,21 +23,24 @@ function useIsNarrow(maxWidth) {
 // the space permanently would leave a gap on every page where an ad blocker
 // ate the request; not reserving it at all would shift the whole page down
 // the moment the ad arrived.
-function useAd(slot) {
+//
+// The request is shared between the slots and so is not aborted on unmount —
+// see adManifest.js. `live` still guards the setState, which is the part that
+// would otherwise warn about a gone component.
+function useAd(slot, pageSlots) {
     const [ad, setAd] = useState(undefined)
+    const key = pageSlots.join(',')
 
     useEffect(() => {
-        const controller = new AbortController()
         let live = true
         setAd(undefined)
-        fetchBannerAd(slot, { signal: controller.signal }).then((result) => {
+        fetchBannerAd(slot, key.split(',')).then((result) => {
             if (live) setAd(result ?? null)
         })
         return () => {
             live = false
-            controller.abort()
         }
-    }, [slot])
+    }, [slot, key])
 
     return ad
 }
@@ -80,16 +48,14 @@ function useAd(slot) {
 // The project carries no prop-types dependency and declares none anywhere
 // else, and adding one for three strings would be a package nobody asked for.
 /* eslint-disable-next-line react/prop-types */
-export default function BannerAd({ slot, mobileSlot, placement }) {
-    // A leaderboard with a phone variant asks for whichever one its current
-    // width can actually draw. Both are real slots in the inventory, so this
-    // is a choice between two things that can be sold rather than a resize of
-    // one of them.
-    const narrow = useIsNarrow(LEADERBOARD_MIN_WIDTH)
-    const active = narrow && mobileSlot ? mobileSlot : slot
+export default function BannerAd({ slot, placement }) {
+    // Every slot asks about the whole page, not only about itself, so the
+    // service can answer them as a set — which is what keeps "YOUR AD HERE"
+    // to one of them.
+    const { all } = usePageSlots()
 
-    const size = SLOT_SIZES[active]
-    const ad = useAd(active)
+    const size = SLOT_SIZES[slot]
+    const ad = useAd(slot, all)
 
     if (!size) return null
     // Settled with nothing to show: the slot collapses rather than drawing a

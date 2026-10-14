@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Moon, Sun } from 'lucide-react';
 import BannerAd from './BannerAd';
+import { usePageSlots } from './adSlots';
 import './App.scss';
 
 const Alert = ({ children }) => (
@@ -27,6 +28,12 @@ const App = () => {
   });
 
   const [hoveredFrame, setHoveredFrame] = useState(null);
+
+  // Which ad slots this page is drawing. Resolved once here so both banners
+  // ask the service about the same set — the house ad is one per page, and
+  // that is a rule the service can only apply to a request that says what the
+  // page is.
+  const adSlots = usePageSlots();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -257,7 +264,7 @@ useEffect(() => {
       {/* Above the work area rather than beside it: the sheet below is drawn
           at its own pixel size and often wider than this container, so it is
           the one thing on the page that gets its space uncontested. */}
-      <BannerAd slot="top" mobileSlot="top-mobile" placement="top" />
+      <BannerAd slot={adSlots.leaderboard} placement="top" />
 
       <div className="csv-input-container">
         <div className="csv-input">
@@ -389,7 +396,7 @@ useEffect(() => {
   {/* Beside the footer copy on a wide window, under it on a narrow one.
       Rendered whether or not a sheet is loaded — an advertiser bought days,
       not the states of somebody else's upload form. */}
-  <BannerAd slot="side" placement="side" />
+  <BannerAd slot={adSlots.rectangle} placement="side" />
 </div>
 
     </div>

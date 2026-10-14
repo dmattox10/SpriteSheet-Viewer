@@ -46,17 +46,54 @@ function toPlacement(ad) {
     }
 }
 
-export async function fetchBannerAd(slot, { signal } = {}) {
+// One request for the whole page, shared by every slot on it.
+//
+// **The page asks about its slots together because the house ad is one per
+// page, not one per slot.** Asked separately, each empty slot was told it
+// could show "YOUR AD HERE" — true of each slot and wrong for the page, which
+// then said it twice and read as a site with no advertisers rather than as an
+// invitation. The service can only apply a per-page rule to a request that
+// describes the page.
+//
+// Single-flighted on the slot list rather than fetched per component, so the
+// two banners share one request and one answer. Without this they would race
+// and each would be answered as if it were the only slot being drawn.
+let inflight = null
+
+function fetchPageAds(slots) {
+    const key = slots.join(',')
+    if (inflight?.key === key) return inflight.promise
+
+    // Deliberately no AbortSignal. The request belongs to the page rather
+    // than to either component, and aborting it when one of them unmounts
+    // would cancel the other's answer mid-flight.
+    const promise = (async () => {
+        try {
+            const url = `${ADS_BASE_URL}/api/manifest-page?site=${SITE}&slots=${encodeURIComponent(key)}`
+            const res = await fetch(url, { credentials: 'omit' })
+            if (!res.ok) return {}
+            const body = await res.json()
+            return body?.ads ?? {}
+        } catch {
+            return {}
+        }
+    })()
+
+    inflight = { key, promise }
+    return promise
+}
+
+export async function fetchBannerAd(slot, pageSlots) {
     // No configured service is the normal state in a checkout nobody has
     // pointed at one. Not an error, and not worth a request.
     if (!ADS_BASE_URL) return null
 
     try {
-        const url = `${ADS_BASE_URL}/api/manifest?site=${SITE}&slot=${encodeURIComponent(slot)}`
-        const res = await fetch(url, { signal, credentials: 'omit' })
-        if (!res.ok) return null
-        const body = await res.json()
-        return toPlacement(body?.ad)
+        const ads = await fetchPageAds(pageSlots?.length ? pageSlots : [slot])
+        // A slot the page asked about and the service answered `null` for is
+        // an ordinary empty slot — on this page, usually the one that did not
+        // get the single house turn.
+        return toPlacement(ads[slot])
     } catch {
         // Offline, DNS, CORS, a blocked request, malformed JSON, an aborted
         // fetch on unmount — every one means the same thing to this slot,
