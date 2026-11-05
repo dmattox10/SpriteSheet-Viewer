@@ -37,6 +37,10 @@ const SITE = 'ssv'
 function toPlacement(ad) {
     if (!ad?.imageUrl) return null
     return {
+        // The service's own id, unprefixed. It is what a view or a click
+        // beacon has to send back, and carrying it separately from any
+        // display shape keeps the two from being mistaken for each other.
+        adId: ad.id,
         imageUrl: ad.imageUrl,
         alt: ad.alt || '',
         // An ad with no click target is a legitimate purchase — a brand
@@ -44,6 +48,54 @@ function toPlacement(ad) {
         // rather than wrapping it in a link to nothing.
         href: ad.clickUrl || null,
     }
+}
+
+/**
+ * Tell the ad service what the page did with an ad.
+ *
+ * A serve is counted by the service when it answers the manifest. A view and a
+ * click are only knowable from here, so they are the two events this sends.
+ * The payload carries the ad's id and the event and nothing else — no cookie,
+ * no visitor id, no address. `credentials: 'omit'` is the same promise: the
+ * request cannot carry an identity even if the site had one to carry.
+ *
+ * It must never throw: it runs inside a click handler and an
+ * IntersectionObserver callback, where an exception would either break the
+ * link or surface as a page error caused by an ad.
+ */
+export function sendAdEvent(placement, slot, event) {
+    if (!ADS_BASE_URL || !placement?.adId) return false
+    if (event !== 'view' && event !== 'click') return false
+
+    const payload = JSON.stringify({
+        ad: placement.adId,
+        site: SITE,
+        slot: slot || null,
+        size: placement.size || null,
+        event,
+    })
+    const url = `${ADS_BASE_URL}/api/beacon`
+
+    try {
+        if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+            // text/plain is a CORS-simple content type, so a beacon cannot
+            // trigger a preflight. The service's route accepts both.
+            return navigator.sendBeacon(url, payload)
+        }
+        if (typeof fetch === 'function') {
+            fetch(url, {
+                method: 'POST',
+                body: payload,
+                headers: { 'Content-Type': 'text/plain' },
+                keepalive: true,
+                credentials: 'omit',
+            }).catch(() => {})
+            return true
+        }
+    } catch {
+        /* a beacon that throws is worse than one that does not */
+    }
+    return false
 }
 
 // One request for the whole page, shared by every slot on it.

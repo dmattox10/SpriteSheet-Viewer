@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { fetchBannerAd } from './adManifest'
+import { useEffect, useRef, useState } from 'react'
+import { fetchBannerAd, sendAdEvent } from './adManifest'
 import { SLOT_SIZES, usePageSlots } from './adSlots'
 
 // An ad slot on the viewer page.
@@ -56,6 +56,59 @@ export default function BannerAd({ slot, placement }) {
 
     const size = SLOT_SIZES[slot]
     const ad = useAd(slot, all)
+    const imgRef = useRef(null)
+    // Which ad this instance has already reported as seen. A ref so reporting
+    // does not cause a render, and so it survives React's development
+    // double-invoke of the effect without counting the same ad twice.
+    const viewedFor = useRef(null)
+
+    // A view is the creative actually being on screen, which only the page can
+    // know. Half the image is the threshold: a banner clipped by the bottom of
+    // a viewport is not one anybody read, and the observer disconnects after
+    // the first report so one reader cannot become several on a scroll.
+    useEffect(() => {
+        const img = imgRef.current
+        if (!img || !ad?.adId) return undefined
+        if (typeof IntersectionObserver !== 'function') return undefined
+
+        let loaded = img.complete && img.naturalWidth > 0
+        let inView = false
+
+        const fire = () => {
+            if (viewedFor.current === ad.adId) return
+            viewedFor.current = ad.adId
+            sendAdEvent(ad, slot, 'view')
+        }
+
+        const onLoad = () => {
+            loaded = true
+            if (inView) fire()
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    inView = entry.isIntersecting && entry.intersectionRatio >= 0.5
+                    if (inView && loaded) fire()
+                }
+            },
+            { threshold: [0.5] }
+        )
+
+        img.addEventListener('load', onLoad)
+        observer.observe(img)
+
+        return () => {
+            img.removeEventListener('load', onLoad)
+            observer.disconnect()
+        }
+    }, [ad, slot])
+
+    const onAdClick = () => {
+        // Fired before the browser follows the link; sendAdEvent uses
+        // sendBeacon first, which is what survives the navigation.
+        sendAdEvent(ad, slot, 'click')
+    }
 
     if (!size) return null
     // Settled with nothing to show: the slot collapses rather than drawing a
@@ -65,6 +118,7 @@ export default function BannerAd({ slot, placement }) {
 
     const creative = ad ? (
         <img
+            ref={imgRef}
             className="banner-ad-image"
             src={ad.imageUrl}
             alt={ad.alt}
@@ -91,6 +145,7 @@ export default function BannerAd({ slot, placement }) {
                 href={ad.href}
                 target="_blank"
                 rel="noopener noreferrer nofollow sponsored"
+                onClick={onAdClick}
             >
                 {creative}
             </a>
