@@ -12,10 +12,14 @@ import { SLOT_SIZES, usePageSlots } from './adSlots'
 // either side would be taking width from a 2048px atlas, and an ad that
 // makes the tool worse at its job is worth less than the space it occupies.
 //
-// One fetch per page per mount, and nothing that re-fetches on a re-render —
-// uploading a file or toggling the theme must not cost another request, and a
-// banner that reshuffles while someone is reading it is an impression nobody
-// finished.
+// One fetch per page, and nothing that re-fetches on a re-render — toggling
+// the theme must not cost another request, and a banner that reshuffles while
+// someone is reading it is an impression nobody finished.
+//
+// A completed run is the exception, and it is a real one: converting a sheet
+// and then opening another is a new sitting, so `generation` — bumped by
+// App.jsx the moment a run finishes — is what asks the service for a fresh
+// draw. See adManifest.js's refreshAds.
 //
 // `undefined` is the pending state and `null` is the settled empty one, and
 // they are distinguished so the slot can hold its height while the request is
@@ -27,7 +31,7 @@ import { SLOT_SIZES, usePageSlots } from './adSlots'
 // The request is shared between the slots and so is not aborted on unmount —
 // see adManifest.js. `live` still guards the setState, which is the part that
 // would otherwise warn about a gone component.
-function useAd(slot, pageSlots) {
+function useAd(slot, pageSlots, generation) {
     const [ad, setAd] = useState(undefined)
     const key = pageSlots.join(',')
 
@@ -40,7 +44,7 @@ function useAd(slot, pageSlots) {
         return () => {
             live = false
         }
-    }, [slot, key])
+    }, [slot, key, generation])
 
     return ad
 }
@@ -48,14 +52,14 @@ function useAd(slot, pageSlots) {
 // The project carries no prop-types dependency and declares none anywhere
 // else, and adding one for three strings would be a package nobody asked for.
 /* eslint-disable-next-line react/prop-types */
-export default function BannerAd({ slot, placement }) {
+export default function BannerAd({ slot, placement, generation }) {
     // Every slot asks about the whole page, not only about itself, so the
     // service can answer them as a set — which is what keeps "YOUR AD HERE"
     // to one of them.
     const { all } = usePageSlots()
 
     const size = SLOT_SIZES[slot]
-    const ad = useAd(slot, all)
+    const ad = useAd(slot, all, generation)
     const imgRef = useRef(null)
     // Which ad this instance has already reported as seen. A ref so reporting
     // does not cause a render, and so it survives React's development

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Moon, Sun } from 'lucide-react';
 import BannerAd from './BannerAd';
 import { usePageSlots } from './adSlots';
+import { refreshAds } from './adManifest';
 import './App.scss';
 
 const Alert = ({ children }) => (
@@ -18,6 +19,12 @@ const App = () => {
 
   const [spriteImage, setSpriteImage] = useState(null);
   const [error, setError] = useState(null);
+
+  // Bumped every time a run finishes. It is passed to both banners, which
+  // re-ask the service when it changes — the whole of "a new spread of ads per
+  // run". See adManifest.js's refreshAds for why the shared answer is dropped
+  // first.
+  const [adGeneration, setAdGeneration] = useState(0);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -202,13 +209,15 @@ const handleThemeToggle = () => {
     }
   };
 
-  // Add useEffect to handle completion state
+// A run is complete when both halves are present, and that moment is also the
+// moment to ask the ad service for a different set: a sheet is on screen, so
+// the serves and views that follow belong to this run rather than the last.
 useEffect(() => {
-  if (jsonData && spriteImage) {
-    setIsComplete(true);
-  } else {
-    setIsComplete(false);
-  }
+  const done = Boolean(jsonData && spriteImage);
+  setIsComplete(done);
+  if (!done) return;
+  refreshAds();
+  setAdGeneration((n) => n + 1);
 }, [jsonData, spriteImage]);
 
  const handleExport = () => {
@@ -264,7 +273,7 @@ useEffect(() => {
       {/* Above the work area rather than beside it: the sheet below is drawn
           at its own pixel size and often wider than this container, so it is
           the one thing on the page that gets its space uncontested. */}
-      <BannerAd slot={adSlots.leaderboard} placement="top" />
+      <BannerAd slot={adSlots.leaderboard} placement="top" generation={adGeneration} />
 
       <div className="csv-input-container">
         <div className="csv-input">
@@ -353,9 +362,28 @@ useEffect(() => {
                  width: data.frame.w,
                  height: data.frame.h,
                }}
+               role="img"
+               tabIndex={0}
+               aria-label={`${filename}, ${data.frame.w} by ${data.frame.h} pixels`}
                onMouseEnter={() => setHoveredFrame(filename)}
                onMouseLeave={() => setHoveredFrame(null)}
-               title={`${filename} (${data.frame.w}x${data.frame.h})`} // Add this line
+               onFocus={(event) => {
+                 setHoveredFrame(filename);
+                 event.currentTarget.style.outline = '2px solid var(--selected-cell-background)';
+                 event.currentTarget.style.outlineOffset = '2px';
+                 event.currentTarget.querySelector('.frame-overlay').style.opacity = '0.6';
+                 event.currentTarget.querySelector('.frame-overlay').style.borderColor = 'var(--selected-cell-background)';
+                 event.currentTarget.querySelector('.frame-label').style.opacity = '1';
+               }}
+               onBlur={(event) => {
+                 setHoveredFrame(null);
+                 event.currentTarget.style.outline = '';
+                 event.currentTarget.style.outlineOffset = '';
+                 event.currentTarget.querySelector('.frame-overlay').style.opacity = '';
+                 event.currentTarget.querySelector('.frame-overlay').style.borderColor = '';
+                 event.currentTarget.querySelector('.frame-label').style.opacity = '';
+               }}
+               title={`${filename} (${data.frame.w}x${data.frame.h})`}
              >
                <div className="frame-label">
                  {`${filename} (${data.frame.w}x${data.frame.h})`}
@@ -396,7 +424,7 @@ useEffect(() => {
   {/* Beside the footer copy on a wide window, under it on a narrow one.
       Rendered whether or not a sheet is loaded — an advertiser bought days,
       not the states of somebody else's upload form. */}
-  <BannerAd slot={adSlots.rectangle} placement="side" />
+  <BannerAd slot={adSlots.rectangle} placement="side" generation={adGeneration} />
 </div>
 
     </div>

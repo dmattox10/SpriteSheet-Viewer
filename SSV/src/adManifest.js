@@ -135,6 +135,17 @@ function fetchPageAds(slots) {
     return promise
 }
 
+// Drop the shared answer so the next ask is a fresh one.
+//
+// The single-flight above is right for a page's first paint and wrong for
+// everything after it. This tool runs sheets one after another in a single
+// sitting, and a run that came back with the same ad it showed the run before
+// is a slot nobody looked at twice — the point of asking again is that the
+// visitor sees somebody different. Called from App.jsx when a run completes.
+export function refreshAds() {
+    inflight = null
+}
+
 export async function fetchBannerAd(slot, pageSlots) {
     // No configured service is the normal state in a checkout nobody has
     // pointed at one. Not an error, and not worth a request.
